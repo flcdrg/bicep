@@ -157,7 +157,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2018-05-01' = {
                     ("name", LanguageConstants.String, TypePropertyFlags.Required),
                     ("location", LanguageConstants.String, TypePropertyFlags.Required)));
 
-            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, false, false);
+            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, isExistingResource: false, isResourceNested: false);
 
             snippets.Should().SatisfyRespectively(
                 x =>
@@ -206,7 +206,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2018-05-01' = {
                     ("name", LanguageConstants.String, TypePropertyFlags.Required),
                     ("location", LanguageConstants.String, TypePropertyFlags.Required)));
 
-            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, false, false);
+            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, isExistingResource: false, isResourceNested: false);
 
             snippets.Should().SatisfyRespectively(
                 x =>
@@ -249,7 +249,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2015-10-31' 
         }
 
         [TestMethod]
-        public void GetResourceBodyCompletionSnippets_WithStaticTemplateAndNested_ShouldReturnSnippets()
+        public void GetResourceBodyCompletionSnippets_WithNestedResource_ShouldReturnSnippets()
         {
             SnippetsProvider snippetsProvider = new SnippetsProvider();
             TypeSymbol typeSymbol = new ResourceType(
@@ -259,7 +259,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2015-10-31' 
                     ("name", LanguageConstants.String, TypePropertyFlags.Required),
                     ("location", LanguageConstants.String, TypePropertyFlags.Required)));
 
-            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, false, true);
+            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, isExistingResource: false, isResourceNested: true);
 
             snippets.Should().SatisfyRespectively(
                 x =>
@@ -319,7 +319,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2015-10-31' 
                             ("name", LanguageConstants.String, TypePropertyFlags.Required)),
                             TypePropertyFlags.Required)));
 
-            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, false, false);
+            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, isExistingResource: false, isResourceNested: false);
 
             snippets.Should().SatisfyRespectively(
                 x =>
@@ -359,7 +359,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2015-10-31' 
                     ResourceScope.ResourceGroup,
                     CreateObjectType("microsoft.aadiam/azureADMetrics@2020-07-01-preview"));
 
-            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, false, false);
+            IEnumerable<Snippet> snippets = snippetsProvider.GetResourceBodyCompletionSnippets(typeSymbol, isExistingResource: false, isResourceNested: false);
 
             snippets.Should().SatisfyRespectively(
                 x =>
@@ -372,7 +372,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2015-10-31' 
         }
 
         [TestMethod]
-        public void GetChildResourceDeclarationSnippets_WithChildResources_ShouldReturnCustomAndDefaultResourceSnippets()
+        public void GetNestedResourceDeclarationSnippets_WithChildResources_ShouldReturnCustomAndDefaultResourceSnippets()
         {
             SnippetsProvider snippetsProvider = new SnippetsProvider();
             TypeSymbol typeSymbol = new ResourceType(
@@ -418,7 +418,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2015-10-31' 
         }
 
         [TestMethod]
-        public void GetChildResourceDeclarationSnippets_WithNoChildResources_ShouldReturnDefaultResourceSnippets()
+        public void GetNestedResourceDeclarationSnippets_WithNoChildResources_ShouldReturnDefaultResourceSnippets()
         {
             SnippetsProvider snippetsProvider = new SnippetsProvider();
             TypeSymbol typeSymbol = new ResourceType(
