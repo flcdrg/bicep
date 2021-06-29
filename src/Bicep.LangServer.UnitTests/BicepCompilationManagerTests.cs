@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 using Bicep.Core.FileSystem;
+using Bicep.Core.Modules;
 using Bicep.Core.UnitTests.Utils;
 using Bicep.Core.Workspaces;
 using Bicep.LanguageServer;
@@ -38,7 +39,8 @@ namespace Bicep.LangServer.UnitTests
 
             var server = CreateMockServer(document);
 
-            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), CreateEmptyFileResolver()), new Workspace());
+            IFileResolver fileResolver = CreateEmptyFileResolver();
+            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), fileResolver, new ModuleReferenceResolver(fileResolver)), new Workspace());
 
             const int version = 42;
             var uri = DocumentUri.File(this.TestContext.TestName);
@@ -82,7 +84,8 @@ namespace Bicep.LangServer.UnitTests
 
             var server = CreateMockServer(document);
 
-            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), CreateEmptyFileResolver()), new Workspace());
+            IFileResolver fileResolver = CreateEmptyFileResolver();
+            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), fileResolver, new ModuleReferenceResolver(fileResolver)), new Workspace());
 
             const int version = 42;
             var uri = DocumentUri.File(this.TestContext.TestName);
@@ -149,7 +152,8 @@ namespace Bicep.LangServer.UnitTests
 
             var server = CreateMockServer(document);
 
-            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), CreateEmptyFileResolver()), new Workspace());
+            IFileResolver fileResolver = CreateEmptyFileResolver();
+            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), fileResolver, new ModuleReferenceResolver(fileResolver)), new Workspace());
 
             const int version = 42;
             var uri = DocumentUri.File(this.TestContext.TestName);
@@ -212,7 +216,8 @@ namespace Bicep.LangServer.UnitTests
         {
             var server = Repository.Create<ILanguageServerFacade>();
 
-            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), CreateEmptyFileResolver()), new Workspace());
+            IFileResolver fileResolver = CreateEmptyFileResolver();
+            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), fileResolver, new ModuleReferenceResolver(fileResolver)), new Workspace());
 
             var uri = DocumentUri.File(this.TestContext.TestName);
 
@@ -228,7 +233,8 @@ namespace Bicep.LangServer.UnitTests
 
             var server = CreateMockServer(document);
 
-            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), CreateEmptyFileResolver()), new Workspace());
+            IFileResolver fileResolver = CreateEmptyFileResolver();
+            var manager = new BicepCompilationManager(server.Object, new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), fileResolver, new ModuleReferenceResolver(fileResolver)), new Workspace());
 
             var uri = DocumentUri.File(this.TestContext.TestName);
 
@@ -317,7 +323,13 @@ namespace Bicep.LangServer.UnitTests
             bool failUpsert = true;
             provider
                 .Setup(m => m.Create(It.IsAny<IReadOnlyWorkspace>(), It.IsAny<DocumentUri>()))
-                .Returns<IReadOnlyWorkspace, DocumentUri>((workspace, documentUri) => failUpsert ? throw new InvalidOperationException(expectedMessage) : new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), CreateEmptyFileResolver()).Create(workspace, documentUri));
+                .Returns<IReadOnlyWorkspace, DocumentUri>((workspace, documentUri) =>
+                {
+                    IFileResolver fileResolver = CreateEmptyFileResolver();
+                    return failUpsert
+                        ? throw new InvalidOperationException(expectedMessage)
+                        : new BicepCompilationProvider(TestTypeHelper.CreateEmptyProvider(), fileResolver, new ModuleReferenceResolver(fileResolver)).Create(workspace, documentUri);
+                });
 
             var manager = new BicepCompilationManager(server.Object, provider.Object, new Workspace());
 

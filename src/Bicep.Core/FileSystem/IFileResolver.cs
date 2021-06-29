@@ -10,7 +10,7 @@ namespace Bicep.Core.FileSystem
     public interface IFileResolver
     {
         /// <summary>
-        /// Tries to read a file contents to string. If an exception is encoutered, returns null and sets a non-null failureMessage.
+        /// Tries to read a file contents to string. If an exception is encountered, returns null and sets a non-null failureMessage.
         /// </summary>
         /// <param name="fileUri">The file URI to read.</param>
         /// <param name="fileContents">The contents of the file, if successful.</param>

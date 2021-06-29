@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Bicep.Core.Emit;
 using Bicep.Core.FileSystem;
+using Bicep.Core.Modules;
 using Bicep.Core.TypeSystem;
 using Bicep.Core.TypeSystem.Az;
 using Bicep.Core.Workspaces;
@@ -86,6 +87,7 @@ namespace Bicep.LanguageServer
             services.AddSingleton<IResourceTypeProvider>(services => creationOptions.ResourceTypeProvider ?? AzResourceTypeProvider.CreateWithAzTypes());
             services.AddSingleton<ISnippetsProvider>(services => creationOptions.SnippetsProvider ?? new SnippetsProvider());
             services.AddSingleton<IFileResolver>(services => creationOptions.FileResolver ?? new FileResolver());
+            services.AddSingleton<IModuleReferenceResolver, ModuleReferenceResolver>();
             services.AddSingleton<ITelemetryProvider, TelemetryProvider>();
             services.AddSingleton<IWorkspace, Workspace>();
             services.AddSingleton<ICompilationManager, BicepCompilationManager>();

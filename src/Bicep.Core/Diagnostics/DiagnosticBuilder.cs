@@ -570,6 +570,7 @@ namespace Bicep.Core.Diagnostics
                 null,
                 new CodeFix($"Change \"{property}\" to \"{suggestedProperty}\"", true, CodeManipulator.Replace(TextSpan, suggestedProperty)));
 
+            // TODO: Message needs to be registry-aware
             public ErrorDiagnostic ModulePathHasNotBeenSpecified() => new(
                 TextSpan,
                 "BCP090",
@@ -1078,6 +1079,21 @@ namespace Bicep.Core.Diagnostics
                 TextSpan,
                 "BCP183",
                 $"The value of the module \"{LanguageConstants.ModuleParamsPropertyName}\" property must be an object literal.");
+
+            public ErrorDiagnostic UnknownModuleReferenceScheme(string badScheme, IEnumerable<string> allowedSchemes) => new(
+                TextSpan,
+                "BCP184",
+                $"The specified module reference scheme \"{badScheme}\" is not recognized. Specify a local path to a Bicep file or a module reference using one of the following schemes: {ToQuotedString(allowedSchemes)}");
+
+            public ErrorDiagnostic InvalidNuGetPackageReference(string badRef) => new(
+                TextSpan,
+                "BCP185",
+                $"The specified NuGet package reference \"{badRef}\" is not valid. Specify a reference in the format of \"nuget:<package>@<version>\".");
+
+            public ErrorDiagnostic InvalidOciArtifactReference(string badRef) => new(
+                TextSpan,
+                "BCP186",
+                $"The specified OCI artifact reference \"{badRef}\" is not valid. Specify a reference in the format of \"oci:<artifact uri>:<tag>\".");
         }
 
         public static DiagnosticBuilderInternal ForPosition(TextSpan span)

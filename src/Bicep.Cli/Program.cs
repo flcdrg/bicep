@@ -10,6 +10,7 @@ using Bicep.Core.Diagnostics;
 using Bicep.Core.Emit;
 using Bicep.Core.Extensions;
 using Bicep.Core.FileSystem;
+using Bicep.Core.Modules;
 using Bicep.Core.Semantics;
 using Bicep.Core.Syntax;
 using Bicep.Core.TypeSystem;
@@ -163,7 +164,10 @@ namespace Bicep.Cli
 
         private void BuildToFile(IDiagnosticLogger logger, string bicepPath, string outputPath)
         {
-            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(new FileResolver(), new Workspace(), PathHelper.FilePathToFileUrl(bicepPath));
+            var fileResolver = new FileResolver();
+            var moduleResolver = new ModuleReferenceResolver(fileResolver);
+            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, moduleResolver, new Workspace(), PathHelper.FilePathToFileUrl(bicepPath));
+            var refs = ExternalReferenceCollector.Collect(syntaxTreeGrouping, moduleResolver);
             var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
 
             var success = LogDiagnosticsAndCheckSuccess(logger, compilation);
@@ -183,7 +187,8 @@ namespace Bicep.Cli
                 Formatting = Formatting.Indented
             };
 
-            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(new FileResolver(), new Workspace(), PathHelper.FilePathToFileUrl(bicepPath));
+            var fileResolver = new FileResolver();
+            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, new ModuleReferenceResolver(fileResolver), new Workspace(), PathHelper.FilePathToFileUrl(bicepPath));
             var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
 
             var success = LogDiagnosticsAndCheckSuccess(logger, compilation);
@@ -210,7 +215,8 @@ namespace Bicep.Cli
                     workspace.UpsertSyntaxTrees(SyntaxTree.Create(fileUri, bicepOutput).AsEnumerable());
                 }
 
-                var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(new FileResolver(), workspace, entrypointUri);
+                var fileResolver = new FileResolver();
+                var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, new ModuleReferenceResolver(fileResolver), workspace, entrypointUri);
                 var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
 
                 return LogDiagnosticsAndCheckSuccess(logger, compilation) ? 0 : 1;
@@ -237,7 +243,8 @@ namespace Bicep.Cli
                     workspace.UpsertSyntaxTrees(SyntaxTree.Create(fileUri, bicepOutput).AsEnumerable());
                 }
 
-                var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(new FileResolver(), workspace, entrypointUri);
+                var fileResolver = new FileResolver();
+                var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, new ModuleReferenceResolver(fileResolver), workspace, entrypointUri);
                 var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
 
                 return LogDiagnosticsAndCheckSuccess(logger, compilation) ? 0 : 1;

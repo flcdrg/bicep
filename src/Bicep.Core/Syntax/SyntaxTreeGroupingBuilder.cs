@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Bicep.Core.Diagnostics;
 using Bicep.Core.FileSystem;
+using Bicep.Core.Modules;
 using Bicep.Core.Parsing;
 using Bicep.Core.TypeSystem;
 using Bicep.Core.Utils;
@@ -17,15 +18,17 @@ namespace Bicep.Core.Syntax
     public class SyntaxTreeGroupingBuilder
     {
         private readonly IFileResolver fileResolver;
+        private readonly IModuleReferenceResolver moduleResolver;
         private readonly IReadOnlyWorkspace workspace;
         private readonly IDictionary<ModuleDeclarationSyntax, SyntaxTree> moduleLookup;
         private readonly IDictionary<ModuleDeclarationSyntax, DiagnosticBuilder.ErrorBuilderDelegate> moduleFailureLookup;
         private readonly IDictionary<Uri, SyntaxTree> syntaxTrees;
         private readonly IDictionary<Uri, DiagnosticBuilder.ErrorBuilderDelegate> syntaxTreeLoadFailures;
 
-        private SyntaxTreeGroupingBuilder(IFileResolver fileResolver, IReadOnlyWorkspace workspace)
+        private SyntaxTreeGroupingBuilder(IFileResolver fileResolver, IModuleReferenceResolver moduleResolver, IReadOnlyWorkspace workspace)
         {
             this.fileResolver = fileResolver;
+            this.moduleResolver = moduleResolver;
             this.workspace = workspace;
             this.moduleLookup = new Dictionary<ModuleDeclarationSyntax, SyntaxTree>();
             this.moduleFailureLookup = new Dictionary<ModuleDeclarationSyntax, DiagnosticBuilder.ErrorBuilderDelegate>();
@@ -33,9 +36,9 @@ namespace Bicep.Core.Syntax
             this.syntaxTreeLoadFailures = new Dictionary<Uri, DiagnosticBuilder.ErrorBuilderDelegate>();
         }
 
-        public static SyntaxTreeGrouping Build(IFileResolver fileResolver, IReadOnlyWorkspace workspace, Uri entryFileUri)
+        public static SyntaxTreeGrouping Build(IFileResolver fileResolver, IModuleReferenceResolver moduleResolver, IReadOnlyWorkspace workspace, Uri entryFileUri)
         {
-            var builder = new SyntaxTreeGroupingBuilder(fileResolver, workspace);
+            var builder = new SyntaxTreeGroupingBuilder(fileResolver, moduleResolver, workspace);
 
             return builder.Build(entryFileUri);
         }
@@ -111,12 +114,12 @@ namespace Bicep.Core.Syntax
 
             foreach (var module in GetModuleSyntaxes(syntaxTree))
             {
-                var moduleFileName = TryGetNormalizedModulePath(fileUri, module, out var moduleGetPathFailureBuilder);
+                var moduleFileName = this.moduleResolver.TryGetModulePath(fileUri, module, out var moduleGetPathFailureBuilder);
                 if (moduleFileName == null)
                 {
                     // TODO: If we upgrade to netstandard2.1, we should be able to use the following to hint to the compiler that failureBuilder is non-null:
                     // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/attributes/nullable-analysis
-                    moduleFailureLookup[module] = moduleGetPathFailureBuilder ?? throw new InvalidOperationException($"Expected {nameof(TryGetNormalizedModulePath)} to provide failure diagnostics");
+                    moduleFailureLookup[module] = moduleGetPathFailureBuilder ?? throw new InvalidOperationException($"Expected {nameof(moduleResolver.TryGetModulePath)} to provide failure diagnostics");
                     continue;
                 }
 
@@ -144,89 +147,6 @@ namespace Bicep.Core.Syntax
 
             failureBuilder = null;
             return syntaxTree;
-        }
-
-        private static readonly ImmutableHashSet<char> forbiddenPathChars = "<>:\"\\|?*".ToImmutableHashSet();
-        private static readonly ImmutableHashSet<char> forbiddenPathTerminatorChars = " .".ToImmutableHashSet();
-        private static bool IsInvalidPathControlCharacter(char pathChar)
-        {
-            // TODO: Revisit when we add unicode support to Bicep
-
-            // The following are disallowed as path chars on Windows, so we block them to avoid cross-platform compilation issues.
-            // Note that we're checking this range explicitly, as char.IsControl() includes some characters that are valid path characters.
-            return pathChar >= 0 && pathChar <= 31;
-        }
-
-        public static bool ValidateModulePath(string pathName, [NotNullWhen(false)] out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
-        {
-            if (pathName.Length == 0)
-            {
-                failureBuilder = x => x.ModulePathIsEmpty();
-                return false;
-            }
-
-            if (pathName.First() == '/')
-            {
-                failureBuilder = x => x.ModulePathBeginsWithForwardSlash();
-                return false;
-            }
-
-            foreach (var pathChar in pathName)
-            {
-                if (pathChar == '\\')
-                {
-                    // enforce '/' rather than '\' for module paths for cross-platform compatibility
-                    failureBuilder = x => x.ModulePathContainsBackSlash();
-                    return false;
-                }
-
-                if (forbiddenPathChars.Contains(pathChar))
-                {
-                    failureBuilder = x => x.ModulePathContainsForbiddenCharacters(forbiddenPathChars);
-                    return false;
-                }
-
-                if (IsInvalidPathControlCharacter(pathChar))
-                {
-                    failureBuilder = x => x.ModulePathContainsControlChars();
-                    return false;
-                }
-            }
-
-            if (forbiddenPathTerminatorChars.Contains(pathName.Last()))
-            {
-                failureBuilder = x => x.ModulePathHasForbiddenTerminator(forbiddenPathTerminatorChars);
-                return false;
-            }
-
-            failureBuilder = null;
-            return true;
-        }
-
-        private Uri? TryGetNormalizedModulePath(Uri parentFileUri, ModuleDeclarationSyntax moduleDeclarationSyntax, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
-        {
-            var pathName = SyntaxHelper.TryGetModulePath(moduleDeclarationSyntax, out var getModulePathFailureBuilder);
-            if (pathName == null)
-            {
-                failureBuilder = getModulePathFailureBuilder;
-                return null;
-            }
-
-            if (!ValidateModulePath(pathName, out var validateModulePathFailureBuilder))
-            {
-                failureBuilder = validateModulePathFailureBuilder;
-                return null;
-            }
-
-            var moduleUri = fileResolver.TryResolveModulePath(parentFileUri, pathName);
-            if (moduleUri == null)
-            {
-                failureBuilder = x => x.ModulePathCouldNotBeResolved(pathName, parentFileUri.LocalPath);
-                return null;
-            }
-
-            failureBuilder = null;
-            return moduleUri;
         }
 
         private void ReportFailuresForCycles()

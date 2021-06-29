@@ -17,6 +17,7 @@ using Bicep.Core.FileSystem;
 using Bicep.Core.Workspaces;
 using Bicep.Core.Extensions;
 using Bicep.Decompiler;
+using Bicep.Core.Modules;
 
 namespace Bicep.Wasm
 {
@@ -148,7 +149,8 @@ namespace Bicep.Wasm
             var syntaxTree = SyntaxTree.Create(fileUri, fileContents);
             workspace.UpsertSyntaxTrees(syntaxTree.AsEnumerable());
 
-            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(new FileResolver(), workspace, fileUri);
+            FileResolver fileResolver = new FileResolver();
+            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, new ModuleReferenceResolver(fileResolver), workspace, fileUri);
 
             return new Compilation(resourceTypeProvider, syntaxTreeGrouping);
         }

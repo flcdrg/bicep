@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Azure.Bicep.Types.Az;
 using Bicep.Core.FileSystem;
+using Bicep.Core.Modules;
 using Bicep.Core.Semantics;
 using Bicep.Core.Syntax;
 using Bicep.Core.TypeSystem.Az;
@@ -31,7 +32,8 @@ namespace Bicep.Core.Samples
         {
             outputDirectory = dataSet.SaveFilesToTestDirectory(testContext);
             var fileUri = PathHelper.FilePathToFileUrl(Path.Combine(outputDirectory, DataSet.TestFileMain));
-            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(new FileResolver(), new Workspace(), fileUri);
+            FileResolver fileResolver = new FileResolver();
+            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, new ModuleReferenceResolver(fileResolver), new Workspace(), fileUri);
 
             return new Compilation(AzResourceTypeProvider.CreateWithAzTypes(), syntaxTreeGrouping);
         }

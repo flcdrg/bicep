@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 using Bicep.Core.FileSystem;
+using Bicep.Core.Modules;
 using Bicep.Core.Semantics;
 using Bicep.Core.Syntax;
 using Bicep.Core.TypeSystem;
@@ -18,16 +19,18 @@ namespace Bicep.LanguageServer.Providers
     {
         private readonly IResourceTypeProvider resourceTypeProvider;
         private readonly IFileResolver fileResolver;
+        private readonly IModuleReferenceResolver moduleResolver;
 
-        public BicepCompilationProvider(IResourceTypeProvider resourceTypeProvider, IFileResolver fileResolver)
+        public BicepCompilationProvider(IResourceTypeProvider resourceTypeProvider, IFileResolver fileResolver, IModuleReferenceResolver moduleResolver)
         {
             this.resourceTypeProvider = resourceTypeProvider;
             this.fileResolver = fileResolver;
+            this.moduleResolver = moduleResolver;
         }
 
         public CompilationContext Create(IReadOnlyWorkspace workspace, DocumentUri documentUri)
         {
-            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, workspace, documentUri.ToUri());
+            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, moduleResolver, workspace, documentUri.ToUri());
             var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
 
             return new CompilationContext(compilation);
