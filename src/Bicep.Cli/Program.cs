@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime;
 using Bicep.Cli.CommandLine;
 using Bicep.Cli.CommandLine.Arguments;
@@ -168,6 +169,8 @@ namespace Bicep.Cli
             var moduleResolver = new ModuleReferenceResolver(fileResolver);
             var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, moduleResolver, new Workspace(), PathHelper.FilePathToFileUrl(bicepPath));
             var refs = ExternalReferenceCollector.Collect(syntaxTreeGrouping, moduleResolver);
+            moduleResolver.DownloadExternalReferences(refs.OfType<OciArtifactModuleReference>());
+
             var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
 
             var success = LogDiagnosticsAndCheckSuccess(logger, compilation);

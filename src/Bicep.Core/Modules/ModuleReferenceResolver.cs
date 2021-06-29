@@ -6,6 +6,7 @@ using Bicep.Core.Diagnostics;
 using Bicep.Core.FileSystem;
 using Bicep.Core.Syntax;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -15,9 +16,12 @@ namespace Bicep.Core.Modules
     {
         private readonly IFileResolver fileResolver;
 
+        private readonly OrasClient orasClient;
+
         public ModuleReferenceResolver(IFileResolver fileResolver)
         {
             this.fileResolver = fileResolver;
+            this.orasClient = new OrasClient(GetArtifactCachePath());
         }
 
         public ModuleReference? TryGetModuleReference(ModuleDeclarationSyntax moduleDeclarationSyntax, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
@@ -30,6 +34,22 @@ namespace Bicep.Core.Modules
             }
 
             return ModuleReferenceParser.TryParse(moduleReferenceString, out failureBuilder);
+        }
+
+        public void DownloadExternalReferences(IEnumerable<ModuleReference> references)
+        {
+            foreach(var reference in references)
+            {
+                switch(reference)
+                {
+                    case OciArtifactModuleReference ociRef:
+                        this.PullArtifact(ociRef);
+                        break;
+
+                    default:
+                        throw new InvalidOperationException($"External references of type {reference.GetType().Name} are not supported.");
+                }
+            }
         }
 
         public Uri? TryGetModulePath(Uri parentFileUri, ModuleDeclarationSyntax moduleDeclarationSyntax, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
@@ -60,7 +80,7 @@ namespace Bicep.Core.Modules
                     return null;
 
                 case OciArtifactModuleReference ociRef:
-                    string localArtifactPath = GetLocalPackagePath(ociRef);
+                    string localArtifactPath = this.orasClient.GetLocalPackagePath(ociRef);
                     if (Uri.TryCreate(localArtifactPath, UriKind.Absolute, out var uri))
                     {
                         failureBuilder = null;
@@ -74,26 +94,17 @@ namespace Bicep.Core.Modules
             }
         }
 
-        private static string GetLocalPackagePath(OciArtifactModuleReference reference)
+        private void PullArtifact(OciArtifactModuleReference reference)
+        {
+            this.orasClient.Pull(reference);
+        }
+
+        private static string GetArtifactCachePath()
         {
             // TODO: Will NOT work if user profile is not loaded on Windows! (Az functions load exes like that)
             string basePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-            var baseDirectories = new[]
-            {
-                basePath,
-                ".bicep",
-                "artifacts",
-                reference.Registry
-            };
-
-            // TODO: Directory convention problematic. /foo/bar:baz and /foo:bar will share directories
-            var directories = baseDirectories
-                .Concat(reference.Repository.Split('/', StringSplitOptions.RemoveEmptyEntries))
-                .Append(reference.Tag)
-                .ToArray();
-
-            return Path.Combine(baseDirectories);
+            return Path.Combine(basePath, ".bicep", "artifacts");
         }
     }
 }

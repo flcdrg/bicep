@@ -51,6 +51,8 @@ namespace Bicep.Core.UnitTests.Modules
             typed.Registry.Should().Be(expectedRegistry);
             typed.Repository.Should().Be(expectedRepository);
             typed.Tag.Should().Be(expectedTag);
+
+            typed.ArtifactId.Should().Be(typed.Registry + typed.Repository + ':' + typed.Tag);
         }
     }
 }

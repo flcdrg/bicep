@@ -27,6 +27,8 @@ namespace Bicep.Core.Modules
 
         public string Tag { get; }
 
+        public string ArtifactId => $"{this.Registry}{this.Repository}:{this.Tag}";
+
         public override bool Equals(object obj)
         {
             if(obj is not OciArtifactModuleReference other)
