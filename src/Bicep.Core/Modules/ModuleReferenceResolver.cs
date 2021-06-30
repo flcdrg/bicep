@@ -1,14 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Azure.Deployments.Core.Extensions;
 using Bicep.Core.Diagnostics;
 using Bicep.Core.FileSystem;
 using Bicep.Core.Syntax;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Bicep.Core.Modules
 {
@@ -80,7 +78,7 @@ namespace Bicep.Core.Modules
                     return null;
 
                 case OciArtifactModuleReference ociRef:
-                    string localArtifactPath = this.orasClient.GetLocalPackagePath(ociRef);
+                    string localArtifactPath = this.orasClient.GetLocalPackageEntryPointPath(ociRef);
                     if (Uri.TryCreate(localArtifactPath, UriKind.Absolute, out var uri))
                     {
                         failureBuilder = null;

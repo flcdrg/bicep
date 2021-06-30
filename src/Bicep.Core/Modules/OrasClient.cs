@@ -20,7 +20,7 @@ namespace Bicep.Core.Modules
 
         public void Pull(OciArtifactModuleReference reference)
         {
-            string localArtifactPath = GetLocalPackagePath(reference);
+            string localArtifactPath = GetLocalPackageDirectory(reference);
 
             // ensure that the directory exists
             Directory.CreateDirectory(localArtifactPath);
@@ -32,7 +32,7 @@ namespace Bicep.Core.Modules
                 {
                     CreateNoWindow = true,
                     ErrorDialog = false,
-                    LoadUserProfile = false,
+                    LoadUserProfile = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -57,7 +57,7 @@ namespace Bicep.Core.Modules
             }
         }
 
-        public string GetLocalPackagePath(OciArtifactModuleReference reference)
+        public string GetLocalPackageDirectory(OciArtifactModuleReference reference)
         {
             var baseDirectories = new[]
             {
@@ -73,5 +73,7 @@ namespace Bicep.Core.Modules
 
             return Path.Combine(directories);
         }
+
+        public string GetLocalPackageEntryPointPath(OciArtifactModuleReference reference) => Path.Combine(this.GetLocalPackageDirectory(reference), "main.bicep");
     }
 }

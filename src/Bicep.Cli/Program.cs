@@ -171,6 +171,9 @@ namespace Bicep.Cli
             var refs = ExternalReferenceCollector.Collect(syntaxTreeGrouping, moduleResolver);
             moduleResolver.DownloadExternalReferences(refs.OfType<OciArtifactModuleReference>());
 
+            // TODO: This should reuse ASTs and possibly other data as well
+            syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, moduleResolver, new Workspace(), PathHelper.FilePathToFileUrl(bicepPath));
+
             var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
 
             var success = LogDiagnosticsAndCheckSuccess(logger, compilation);
